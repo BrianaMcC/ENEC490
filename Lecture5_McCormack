@@ -1,0 +1,138 @@
+%Lecture 5
+
+%Read 2015 electricity demand data
+data = csvread('hourly-day-ahead-bid-data-2015.csv',5,1); %data is read in as rows of days and columns of time of day, data for all hours of day
+vector = mat2vec(data); %creates chronological vector
+
+%Read 2014 electricity demand data
+bizarre_data = csvread('bizarre_data.csv') %Want to pre-process
+
+%3 errors in 2014 data: 
+    %1. Spikes to absurdly high values (linear interpolation depends on gap
+        %size, bootstrapping depends on correlation)
+    %2. Drops to zero 
+    %3. Drops to below zero (negative number code for bad or nonexistent
+        %data
+%write function that pre-processes data - linear interpolation works best
+%here
+
+
+%Pre-process Data
+processed_data = pre_processor(bizarre_data); 
+%contains an outlier in october when plotted
+
+candidates = find(processed_data > 130000); %finds indices of values >130000
+index = candidates(find(candidates>7000)) %returns value at index of values >7000 in candidates
+day = floor(index/24); %converts index into a day
+hour = index - day*24; %returns hour of day 
+answer = [day hour] %outputs 2 am on 305 day of year
+
+%histogram: test for normality
+figure;
+histogram(processed_data,100); %returns skewed right histogram 
+xlabel('Demand (MWh)','FontSize', 14)
+ylabel('Frequency','FontSize', 14)
+title('Pre-processed 2014 Data', 'FontSize',14)
+
+%qqplot : test for normality 
+figure; 
+qqplot(processed_data);  %returns skewed data for high and low values
+xlabel('Theoretical Normal Quantiles','FontSize',14)
+ylabel('Empirical Data Normal Quantiles','FontSize',14)
+title('QQ Plot of Pre-Processed Demand Data','FontSize',14)
+
+%log transformation
+transformed_data = log(processed_data); %for data not apparent as bell curve
+%Why and when do we want to do this? 
+
+%histogram
+figure; 
+histogram(transformed_data,100); %returns normalized data/bell curve
+xlabel('log-Demand (MWh)','FontSize', 14)
+ylabel('Frequency','FontSize', 14)
+title('Log-Transformed 2014 Data', 'FontSize',14)
+
+
+%qqplot
+figure;
+qqplot(transformed_data); %What are we looking for in qq plots?
+xlabel('Theoretical Normal Quantiles','FontSize',14)
+ylabel('Empirical Data Normal Quantiles','FontSize',14)
+title('QQ Plot of Log-Transformed Demand Data','FontSize',14)
+
+%mean
+mu = mean(processed_data); %mean/std of post-wacky data
+dev = std(processed_data); %still includes wacky point in autumn
+
+%number of standard deviations weird point is away from mean
+number_stds = (processed_data(index) - mu)/dev; %index from candidates code
+
+
+%%Question 4%%
+%Reasonable to do stat outlier test based on standard deviations away from
+%mean demand for the entire year?
+        % Could start using std once the data has been transformed, whats
+        % the prob of getting something more than 3 std from the mean?
+        % What if the outler was half the height? Want moving window filter
+        %to go through all data points and take sample means/stds. Compare
+        %to values around it instead of comparing it to the whole year 
+        
+%moving window assessment
+num_hours = length(transformed_data);  %#hours in 365 day year
+window = 500; %length of 500 data points in window
+
+%ouput
+outliers = zeros(num_hours,1); %8760 rows, 1 column
+
+% for i = 251 to i = 8510  %why? -> can't start at 0, can't go over 8760
+for i = window/2 + 1:num_hours-window/2
+    
+    % calculate the mean for every point in transformed data from (i-250)
+    % to (i + 250) (a 501 point window)
+    window_mean = mean(transformed_data(i-250:i+250) );
+    
+    % calculate the std. deviation for every point in transformed data from
+    % (i-250) to (i + 250) (a 501 point window)
+    window_std = std(transformed_data(i-250:i+250));
+    
+    % test whether points 251:8510 in transformed data are outliers
+    if transformed_data(i) >= window_mean + 3*window_std | transformed_data(i) <= window_mean - 3*window_std %if value is 3 std above or below mean 
+        outliers(i) = 1; %truth value 1 (outlier)
+    else
+        outliers(i) = 0; %truth value 0 (not outlier)
+    end
+    
+    
+end
+
+find(outliers>0)
+        
+
+%%Question 5%%      
+% If not (and assuming normality), find better way to determine outlier. If
+% it is should we fix it? 
+        % Depends on context. Demand, it doesn't matter but if it were
+        % prices you would want to research. No good reason for demand to
+        % spike but price yes
+
+        
+%%DATA MINING%%
+
+%Question 1/2: Converting Hourly Demand to Peak Hourly Demand
+
+%want to take max out of each 24 steps, should have 365 values in resulting
+%vector -> could use original data matrix 
+
+peak_demand = max(data,[], 2);
+
+temp_data = csvread('tempdata.csv');
+
+%Question 3: Scatter Function daily avg temp vs peak electricty demand
+        
+figure;
+scatter(temp_data(:,2),peak_demand);
+xlabel('Daily Average Temperature');
+ylabel('Daily Peak Electricity Demand');
+title('Scatter Plot of Daily Average Temp vs. Peak Electricity Demand');
+
+%There tends to be higher demand for electricity for very high temperatures
