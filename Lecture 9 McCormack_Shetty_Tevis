@@ -1,0 +1,46 @@
+%Lecture9: McCormack_Shetty_Tevis
+
+[data text combined]  = xlsread('state_fuel_cf.xlsx');
+
+%conditional 
+state = 'NC';  %Desired state
+fuel = 'SUN';  %Primary fuel
+cf = .20;  %Capacity Factor between 0 and 1
+
+% state probabilities
+a = strcmp(state,text(:,1)); %Returns logical value, 1 if two inputs are equivalent
+state_plants = find(a(:,1)>0); %Returns the indices of of NC data 
+state_prob = length(state_plants)/length(data); % Returns the prob that NC is selected from the data
+
+%AI) Prob that any given power plant in US is in specified state  : 0.319
+state_prob = length(state_plants)/length(data)
+
+%A2) Prob any given power plant in US has specified primary fuel type  : .0836
+b = strcmp(fuel, text(:,2));
+fuel_plants = find(b(:,1)>0);
+fuel_prob = length(fuel_plants)/length(data)
+
+%A3) Prob any given power plant has cf => specified Capacity Factor   : 0.5143
+cf_plants = find(data(:,1)> cf);
+cf_prob = length(cf_plants)/length(data)
+
+%B1) Selecting NC plant given having selected SUN plant  : 0.1039
+StategivenFuel = sum(strcmp(state, text(fuel_plants, 1)));
+StategivenFuelprob = StategivenFuel / length(fuel_plants)
+
+% B2) Selecting solar plant given selecting NC : Should be 0.2723
+FuelgivenState = sum(strcmp(fuel , text(state_plants,2)));
+FuelgivenStateprob = FuelgivenState / length(state_plants)
+
+%B3) Solar Plant in NC with capacity greater than 0.2  : Should equal
+%1.42e-3 ~ 0.0014
+StateFuelCFprob = cf_prob * fuel_prob * state_prob
+
+
+%B4) Selecting CF greater than 0.2 conditional on having selected NC solar
+%plant : 
+
+d = strcmp(state , text(:,1)) & strcmp(fuel , text(:,2));
+CFgivenFuelState = find(d(:,1) >0);
+cffind = find(data(CFgivenFuelState,1) > cf);
+CFgivenFuelStateprob = length(cffind) / length(CFgivenFuelState)
