@@ -1,0 +1,82 @@
+%%% Lecture8: McCormack_Shetty_Tevis%%%
+
+%import relevant data 
+[data text combined] = xlsread('N3045US3m','Data 1','A4:B183'); 
+
+%histogram of 2002-2016 gas price data
+histogram(data); 
+
+%log transformation
+transformed_data = log(data); %normalizes the data for better histogram
+
+%histogram of log transformed data
+histogram(transformed_data); 
+xlabel('Log Natural Gas Price ($/MMBtu)','FontSize',14);
+ylabel('Frequency','FontSize',14);
+
+%number of years in dataset
+years = length(data)/12;  %data is given in months
+
+%convert to 12 x N matrix
+monthly_matrix = vec2mat(transformed_data,12,years);
+
+% mean and standard deviation of log-transformed data by month
+stats = zeros(12,2);
+for i = 1:12
+    stats(i,1) = mean(monthly_matrix(i,:));
+    stats(i,2) = std(monthly_matrix(i,:));
+end
+
+%identify months
+months = {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
+
+figure;
+hold on;
+%bin 'edges'
+edges = 0:0.5:30;
+
+%highest mean
+idx = find(stats(:,1) == max(stats(:,1))); %January
+sample = stats(idx,1) + stats(idx,2)*randn(1000,1);  
+back_transformed = exp(sample);
+histogram(back_transformed,edges);
+label_1 = strcat(months{idx},' - Highest Mean');  %WHAT IS STRCAT?
+
+%Lowest mean 
+idx = find(stats(:,1) == min(stats(:,1))); %September
+sample = stats(idx, 1) + stats(idx,2)*randn(1000,1);
+back_transformed = exp(sample);
+histogram(back_transformed, edges);
+label_2 = strcat(months{idx}, '- Lowest Mean');
+
+%Highest Standard Deviation 
+idx = find(stats(:,2) == max(stats(:,2)));  %June
+sample = stats(idx,1) + stats(idx,2)*randn(1000,1);  
+back_transformed = exp(sample);
+histogram(back_transformed,edges);
+label_1 = strcat(months{idx},' - Highest STD');
+
+%Lowest Standard Deviation
+idx = find(stats(:,2) == min(stats(:,2)));  %November
+sample = stats(idx,1) + stats(idx,2)*randn(1000,1);  
+back_transformed = exp(sample);
+histogram(back_transformed,edges);
+label_1 = strcat(months{idx},' - Lowest STD');
+legend('January' , 'September' , 'June' , 'November');
+xlabel('Random Sample Natural Gas Prices ($/MMBtu)');
+ylabel('Frequency');
+
+
+
+%Boxplot Transformed Data Monthly Gas Prices
+figure;
+boxplot(monthly_matrix', 'Labels' , {months});
+xlabel('Months');
+ylabel('Transformed Natural Gas Price ($/MMBtu)');
+title('Monthly Natural Gas Prices');
+
+figure;
+plot(data);
+xlabel('Month');
+ylabel('Natural Gas Price ($/MMBtu)');
+title('Monthly Natural Gas Prices');
