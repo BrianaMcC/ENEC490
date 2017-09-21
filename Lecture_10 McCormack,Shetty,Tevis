@@ -1,0 +1,98 @@
+%Lecture10
+
+clear all
+data=xlsread('catawba_data.xlsx');
+
+temps = data(:,4); 
+flows = data(:,5);
+
+days=length(temps);
+
+W = zeros(days,1);     %Water temps each day 
+losses = zeros(days,1);  %Amount of MW/h lost in a 24 hour day 
+
+for i = 1:days
+    
+    W(i) = (33.3/(1+exp(.15*(16.9-temps(i)))) + 127/flows(i));
+    
+    if W(i) > 37 && W(i) <= 40
+    losses(i) = .25*2000*24;   %Lost a quarter all day
+    elseif W(i) > 40 && W(i) <= 42
+    losses(i) = .50*2000*24;  %Lost half all day
+    elseif W(i) > 42
+    losses(i) = 2000*24; %Lost all day, shut down
+    end
+        
+end
+
+losses_dollars = (losses*100)/1000;   %convert losses to thousands of dollars for plotting 
+
+annual_losses = zeros(41,1); %Losses each year 
+
+for i = 1:41
+    annual_losses(i) = sum(losses_dollars((i-1)*365+1:(i-1)*365+365));
+end
+
+sorted_losses = sort(annual_losses);  %From min to max
+idx = round(.95*41);
+Var = sorted_losses(idx);
+
+%%Climate Change
+
+log_flows  = log(flows);
+mu = mean(log_flows);
+st_f = std(log_flows);
+whitened_flows = (log_flows - mu)/st_f;
+
+cc_mu = .9*mu;
+cc_st_f = 1.2*st_f;
+
+new_flows = whitened_flows*( cc_st_f ) + ( cc_mu ) ;
+
+cc_flows = exp(new_flows);
+
+%
+
+cc_temps = temps +2 ; 
+
+Wcc = zeros(days,1);     %Water temps each day 
+cc_losses = zeros(days,1);  %Amount of MW/h lost in a 24 hour day 
+
+for i = 1:days
+    
+    Wcc(i) = (33.3/(1+exp(.15*(16.9- cc_temps(i)))) + 127/cc_flows(i));
+    
+    if Wcc(i) > 37 && Wcc(i) <= 40
+    cc_losses(i) = .25*2000*24;   %Lost a quarter all day
+    elseif Wcc(i) > 40 && Wcc(i) <= 42
+    cc_losses(i) = .50*2000*24;  %Lost half all day
+    elseif Wcc(i) > 42
+    cc_losses(i) = 2000*24; %Lost all day, shut down
+    end
+        
+end
+
+cc_losses_dollars = (cc_losses*100)/1000;   %convert losses to thousands of dollars for plotting 
+
+cc_annual_losses = zeros(41,1); %Losses each year 
+
+for i = 1:41
+    cc_annual_losses(i) = sum(cc_losses_dollars((i-1)*365+1:(i-1)*365+365));
+end
+
+cc_sorted_losses = sort(cc_annual_losses);  %From min to max
+cc_idx = round(.95*41);
+cc_Var = cc_sorted_losses(cc_idx);
+
+b = ceil(max(cc_annual_losses)/100000)*100000;
+edges = [0:10000:b];
+
+figure;
+hold on;
+histogram(annual_losses,edges);
+histogram(cc_annual_losses,edges);
+ylabel('Frequency','FontSize',14);
+xlabel('Losses $1000s','FontSize',14);
+legend('1970-2010','Climate Change');
+
+
