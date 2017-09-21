@@ -21,6 +21,7 @@ fuel_plants = find(b(:,1)>0);
 fuel_prob = length(fuel_plants)/length(data)
 
 %A3) Prob any given power plant has cf => specified Capacity Factor   : 0.5143
+c = [data(:,1) > cf];
 cf_plants = find(data(:,1)> cf);
 cf_prob = length(cf_plants)/length(data)
 
@@ -33,8 +34,10 @@ FuelgivenState = sum(strcmp(fuel , text(state_plants,2)));
 FuelgivenStateprob = FuelgivenState / length(state_plants)
 
 %B3) Solar Plant in NC with capacity greater than 0.2  : Should equal
-%1.42e-3 ~ 0.0014
-StateFuelCFprob = cf_prob * fuel_prob * state_prob
+%0.0013
+StateFuelCF = [a , b , c];
+StateFuelCFfind = find(StateFuelCF(:,1)> 0 & StateFuelCF(:,2)> 0 & StateFuelCF(:,3)> 0);
+StateFuelCFprob = length(StateFuelCFfind) / length(data)
 
 
 %B4) Selecting CF greater than 0.2 conditional on having selected NC solar
