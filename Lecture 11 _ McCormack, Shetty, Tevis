@@ -1,0 +1,39 @@
+%Lecture11
+
+clear all
+close all 
+
+% data=xlsread('temp_demand.xlsx');
+t_data = xlsread('temp_demand.xlsx','training');
+v_data = xlsread('temp_demand.xlsx','validation');
+t_temps = t_data(:,1); %Average Daily temp in F
+t_demand = t_data(:,3); %demand in MWh
+v_temps = v_data(:,1); %Average Daily temps F
+v_demand = v_data(:,3); %Demand MWh
+
+t_CDD = max(t_temps - 65,0); 
+t_HDD = max(65 - t_temps,0);  %Heating Degree Days
+v_CDD = max(v_temps - 65,0);  %Cooling Degree Days
+v_HDD = max(65 - v_temps,0);
+
+X = [ones(length(t_CDD),1) t_CDD t_HDD];  %
+
+[BETA,SIGMA,RESID]=mvregress(X,t_demand); %Find values of data that minimize least squares error that minimizes error between prediction and actual
+%RESID: Difference between observed vs predicted values of dependent
+%variable
+
+predicted = BETA(1)*ones(length(v_CDD),1) + BETA(2)*v_CDD + BETA(3)*v_HDD;
+
+figure
+scatter(predicted, v_demand)
+xlabel('Predicted Demand (MWh)');
+ylabel('Actual Demand (MWh)');
+
+r2 = 1 - sum((predicted - v_demand).^2) / sum((v_demand - mean(v_demand)).^2)
+residuals = predicted - v_demand; 
+MSE = (sum(residuals).^2)/length(v_demand);
+
+figure
+scatter(v_demand, residuals);
+xlabel('Actual Demands (MWh)');
+ylabel('Residuals');
