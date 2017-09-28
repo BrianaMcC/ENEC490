@@ -1,0 +1,62 @@
+%Lecture12 McCormack Shetty Tevis
+
+data=xlsread('peak_forecasting.xlsx','RegressionData');
+insample = data(1:9,:);  % 2000 - 2008 peak demand , economic index , pop in millions,percapita consumption ment , max avg daily temp
+outsample = data(10:end,:); % 2009 - 2015
+
+Y = insample(:,2);  %Peak electricity demand for each year from 2000 - 2008
+X = [ones(length(Y),1) insample(:,3:end)];  % eco , pop , percapita , avgtemp
+%ones needed for C 
+coeff = mvregress(X,Y);  %B values
+
+N = length(Y);
+
+% Y = x1b1 + x2b2 + ... + C
+%x2 is temp? 
+
+
+% predicted peak
+predicted = coeff(1) + coeff(2)*outsample(:,3) + coeff(3)*outsample(:,4) + coeff(4)*outsample(:,5) + coeff(5)*outsample(:,6);
+
+% actual
+actual = outsample(:,2);
+
+% scatterplot
+scatter(actual,predicted);
+
+% RMSE
+sq_errors = (predicted - actual).^2;  % Squared Errors
+RMSE = sqrt(mean((sq_errors)));   % Root Mean Squared Error
+
+data = xlsread('peak_forecasting.xlsx', 'HistoricalTemps');
+temp_data = data(:,2);
+years = floor(length(data)/365);
+annual_peak = zeros(years ,1); %66 years
+
+%Collect hottest temps from calendar years
+for i = 1:years
+    annual = temp_data((i-1)*365 +1 : (i-1)*365 +365);
+    annual_peak(i) = max(annual);
+end
+
+hist_mean = mean(annual_peak);
+hist_std = std(annual_peak);
+
+
+predicted_data = xlsread('peak_forecasting.xlsx', 'Predictions');
+
+r = hist_mean + hist_std.*randn(1000,1);
+
+
+%predicting 2020
+NC_sim = coeff(1) + coeff(2)*1.8 + coeff(3)*5.3181 + coeff(4)*0.87 +coeff(5)*r;
+
+RM = ((25000 - NC_sim)/25000)*100;
+
+figure
+histogram(RM);
+xlabel('Reserve Margin (%)')
+ylabel ('Frequency (out of 1000)')
+
+%Prob less than 15%
+sum(RM<15)/1000
