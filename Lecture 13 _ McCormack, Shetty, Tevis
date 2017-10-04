@@ -1,0 +1,52 @@
+%Lecture13
+
+%Read electricity demand data
+data = csvread('hourly-day-ahead-bid-data-2015.csv',5,1);
+v = mat2vec(data);
+
+for i = 1:length(v)
+    if v(i) < 100
+        v(i) = v(i-1)*.5 + v(i+1)*5
+    end
+end
+
+%winter
+%figure;
+%autocorr(v(1:1200));
+
+%summer
+%figure;
+%autocorr(v(4000:5199));
+
+%fall
+%figure;
+%autocorr(v(6000:7200));
+
+%calculate peak demand
+peaks = zeros(365,1);
+for i = 1:365
+    peaks(i) = max(data(i,:));
+end
+
+%peaks
+%figure;
+%autocorr(peaks,60);
+
+%plot peak differences
+peak_diff = diff(peaks);
+%plot(peak_diff);
+
+%truncated peak demand
+truncated_peaks = zeros(335,1);
+for i = 16:350
+    truncated_peaks(i-15) = mean(peaks(i-15:i+15));
+end
+
+peaks = peaks(16:350);
+
+%plot truncated peaks
+figure;
+hold on;
+plot(peaks);
+plot(truncated_peaks);
+hold off;
