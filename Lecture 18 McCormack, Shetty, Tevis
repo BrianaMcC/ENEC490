@@ -1,0 +1,58 @@
+%Lecture18
+
+%Define state vector
+% 1 - sunny; 2 - rainy
+
+x = [0 1];
+P = [.9 .1; .5 .5];
+
+% Probability of weather 10 days from now
+x_n = zeros(10,2); %Column 1 is sunny, column 2 is rainy
+for i = 1:10
+    x_n(i,:) = x*P^i;
+end
+
+% Steady state probability
+
+% q (P - I) = 0
+
+P_I = P - [1 0;0 1];
+
+% Solve system of equations 
+% -.1(q1) + .1(q2) = 0
+%  .5(q1) - .5(q2) = 0
+%   q1 + q2 = 1
+
+% .1(q1) - .5(1-q1) = 0; -->
+% .6(q1)  = .5
+q1 = .5/.6;
+q2 = 1-q1;
+[q1 q2]
+
+sunny = q1*365 %days/365
+rainy = q2*365 %days/365
+
+%%%%%
+
+
+%1 is unskilled - 2 is skilled - 3 is pro
+x_ex = [1 0 0]; %starting with unksilled 
+P_ex = [.25 .25 .5; .2 .2 .6; .1 .1 .8];
+
+x_new = zeros(10,3); %Column 1 is no skill, column 2 is skill column 3 is pro
+for i = 1:10
+    x_new(i,:) = x_ex*P_ex^i;
+end
+
+P_I_ex = P_ex - [1 0 0;0 1 0; 0 0 1];
+
+%-.75 , .25 , .5
+% .2  , -.8 , .6
+% .1  ,  .1 , -.2
+
+%q1 + q2 + q3 = 1
+
+q1_ex = 2/15; %Prob daughter is not skilled
+q2_ex = 2/15; %Prob daughter is skilled
+q3_ex = 11/15; %Prob daughter is professional
+Q = [q1_ex , q2_ex , q3_ex]; %Equilibrium probabilities
